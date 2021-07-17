@@ -3,99 +3,115 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import pickle
 
 
-# Criando um título para nosso projetogit push origin master
-st.title("Análise de Datasets com Streamlit")
-
+# Criando um título para nosso projeto
+st.title("Avaliando se você será promovido ou não")
 st.write('''
-# Explorando diferentes classificadores
+### Preencha os campos para realizar a previsão!
 ''')
 
-# Criando os menus laterais para os tipos de datasets
-dataset_name = st.sidebar.selectbox("Selecione o Dataset", ("Iris", "Breast Cancer", "Wine Dataset"))
-st.write("Nome do Dataset = ", dataset_name)
-# Criando os menus laterais para o tipo de Modelo
-classifier_name = st.sidebar.selectbox("Selecione o Classificador", ("KNN", "SVM", "Random Forest"))
-'''
-# Função para carregar os datasets
-def get_dataset(dataset_name):
-    if dataset_name == "Iris":
-        data = datasets.load_iris()
-    elif dataset_name == "Breast Cancer":
-        data = datasets.load_breast_cancer()
-    else:
-        data = datasets.load_wine()
-    X = data.data
-    y = data.target
-    return X, y
+st.sidebar.header('Dados do Funcionário')
 
-X, y = get_dataset(dataset_name)
-# Mostrar o tamanho do dataset
-st.write("Tamanho do Dataset", X.shape)
-# Mostrar o número de classes do dataset
-st.write("Número de Classes", len(np.unique(y)))
+department_mapping = {
+                'Sales & Marketing':1,
+                'Operations':2,
+                'Technology':3,
+                'Analytics':4,
+                'R&D':5,
+                'Procurement':6,
+                'Finance':7,
+                'HR':8,
+                'Legal':9
+}
 
-# Função para criar os parâmetros do classificador
-def add_paramter_ui(clf_name):
-    params = dict()
-    if clf_name == "KNN":
-        K = st.sidebar.slider("K", 1, 15)
-        params["K"] = K
-    elif clf_name == "SVM":
-        C = st.sidebar.slider("C", 0.01, 10.0)
-        params["C"] = C
-    else:
-        max_depth = st.sidebar.slider("max_depth", 2, 15)
-        n_estimators = st.sidebar.slider("n_estimators", 1, 100)
-        params["max_depth"] = max_depth
-        params["n_estimators"] = n_estimators
-    return params
+education_mapping = {
+                'Mestrado/Doutorado/PosDoc':1,
+                'Superior Completo':2,
+                'Ensino Médio/Fundamental':3
+}
 
-params = add_paramter_ui(classifier_name)
+kpi_mapping = {
+                'Sim':1,
+                'Não':0
+}
 
-# Função para carregar os modelos
-def get_classifier(clf_name, params):
-    if clf_name == "KNN":
-        clf = KNeighborsClassifier(n_neighbors=params["K"])
-    elif clf_name == "SVM":
-        clf = SVC(C=params["C"])
-    else:
-        clf = RandomForestClassifier(max_depth=params["max_depth"],
-                                     n_estimators=params["n_estimators"], random_state=1234)
-    return clf
+award_mapping = {
+                'Sim':1,
+                'Não':0
+}
 
-clf = get_classifier(classifier_name, params)
+# Criando o menu lateral para inserir os dados do funcionário
+def user_input_features():
+    department_feature = st.sidebar.selectbox("Selecione o Departamento", ("Sales & Marketing", "Operations",
+                                                                           "Technology", "Analytics", "R&D",
+                                                                           "Procurement", "Finance", "HR",
+                                                                           "Legal"))
+    department = department_mapping[department_feature]
+    education_feature = st.sidebar.selectbox("Selecione a sua Escolaridade", ("Mestrado/Doutorado/PosDoc",
+                                                                              "Superior Completo",
+                                                                              "Ensino Médio/Fundamental"))
+    education = education_mapping[education_feature]
+    kpi_met = st.sidebar.selectbox("Alcançou as metas de pelos menos 80%", ("Sim", "Não"))
+    kpi = kpi_mapping[kpi_met]
+    award_won = st.sidebar.selectbox("Foi Premiado este ano", ("Sim", "Não"))
+    award = award_mapping[award_won]
+    age = st.sidebar.slider("Selecione a sua idade?", 15, 70, 30)
+    no_of_training = st.sidebar.slider("Quantos treinamentos você realizou?", 1, 10, 2)
+    avg_training_score = st.sidebar.slider("Média das notas no treinamento", 40, 99, 70)
+    previous_year_rating = st.sidebar.slider("Avaliação de Performance ano anterior", 1, 5, 4)
+    length_of_service = st.sidebar.slider("Tempo de serviço", 1, 13, 5)
 
-#Classification
-# Vamos usar a função train_test_split para separar nosso dataset em treino e teste.
-# Aqui vamos usar 80% para treino e 20% para teste
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1234)
-# Realizando o treinamento do Classificador
-clf.fit(X_train, y_train)
-# Gerando a predição no dataset de teste
-y_pred = clf.predict(X_test)
-# Verificando a acurácia
-acc = accuracy_score(y_test, y_pred)
-# Escrevendo na página o nome do classificador
-st.write(f"Classificador = {classifier_name}")
-# Escrevendo na página o resultado da acurácia
-st.write(f"Acurácia = {acc}")
+    # train['awards_won?']+train['KPIs_met >80%'] + train['previous_year_rating']
+    sum_metric = award + kpi + previous_year_rating
 
-# PCA
-# Para que possamos criar um gráfico de dispersão(scatter plot), é necessário usar um algoritimo não supervisionado
-# chamado PCA (Principal Component Analysis), com isso iremos reduzir a dimensão do conjunto de dados:
-pca = PCA(2)
-X_projected = pca.fit_transform(X)
-x1 = X_projected[:, 0]
-x2 = X_projected[:, 1]
+    # train['total_score'] = train['avg_training_score'] * train['no_of_trainings']
+    total_score = avg_training_score * no_of_training
 
-# Plotagem
-fig = plt.figure()
-plt.scatter(x1, x2, c=y, alpha=0.8, cmap="viridis")
-plt.xlabel("Principal Component 1")
-plt.ylabel("Principal Component 2")
-plt.colorbar()
-st.pyplot(fig)
+    data = {
+        'department': department,
+        'education': education,
+        'no_of_trainings': no_of_training,
+        'age': age,
+        'previous_year_rating': previous_year_rating,
+        'length_of_service': length_of_service,
+        'KPIs_met >80%': kpi,
+        'awards_won?': award,
+        'avg_training_score': avg_training_score,
+        'sum_metric': sum_metric,
+        'total_score': total_score,
+    }
 
-'''
+    features = pd.DataFrame(data, index=[0])
+    return features
+
+input_df = user_input_features()
+
+# lendo o dataset de teste
+promotion_test = pd.read_csv('./input/test.csv')
+# concatenando os dados do usuário com os dados do dataset de teste
+df = pd.concat([input_df, promotion_test], axis=0)
+
+# selecionando a primeira linha (o valor inserido pelo usuário)
+df = df[:1]
+
+# realizando a leitura do modelo salvo
+load_randomForest = pickle.load(open('employee_promotion_prediction.pkl', 'rb'))
+
+# aplicando o modelo para realizar a previsão
+prediction = load_randomForest.predict(input_df)
+prediction_probability = load_randomForest.predict_proba(input_df)
+
+st.subheader('Previsão')
+result = np.array(['Você provavelmente não será promovido.','Você será promovido!'])
+st.write(result[prediction][0])
+
+st.subheader('Probabilidade da Previsão')
+st.write('Baseado nos dados selecionados,\nvocê tem {0:.2f}% de chances de ser promovido.'.format(
+    prediction_probability[0][1] * 100))
+
+if prediction == 0:
+    st.image('./images/not_promoted.jpg', use_column_width=True)
+else:
+    st.image('./images/promoted.jpg', use_column_width=True)
