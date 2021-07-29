@@ -1,4 +1,4 @@
-## Employee Promotion Prediction project made with Python language
+## Employee Promotion Prediction with Streamlit and Deploy on Heroku
 https://employee-promotion-prediction.herokuapp.com/
 
 It contains:
