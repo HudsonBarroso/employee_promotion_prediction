@@ -1,4 +1,5 @@
-# Employee Promotion Prediction with Streamlit and Deploy on Heroku
+# employee_promotion_prediction
+Employee Promotion Prediction with Streamlit and Deploy on Heroku
 
 https://employee-promotion-prediction.herokuapp.com/
 
